@@ -546,17 +546,17 @@ function convertGoogleTools(tools: NonNullable<Context["tools"]>) {
 }
 
 
-function formatReactToolsPrompt(tools: any[]): string {
+function formatReactToolsPrompt(tools: unknown[]): string {
   const toolDesc = tools
-    .map((t) => JSON.stringify({ name: t.name, description: t.description, parameters: t.parameters }))
+    .map((t: unknown) => JSON.stringify({ name: (t as Record<string, unknown>).name, description: (t as Record<string, unknown>).description, parameters: (t as Record<string, unknown>).parameters }))
     .join("\n");
   return `\n\nYou have access to the following tools:\n${toolDesc}\n\nTo use a tool, you MUST output a JSON block matching this exact format:\nAction: {\n  "name": "tool_name",\n  "arguments": {"arg1": "value1"}\n}\n\nFirst write your Thought: then your Action:`;
 }
 
 function parseReactToolCall(text: string): { name: string; arguments: Record<string, unknown> } | null {
   const actionIdx = text.lastIndexOf("Action:");
-  if (actionIdx === -1) return null;
-  const jsonStr = text.substring(actionIdx + 7).trim();
+  if (actionIdx === -1) {return null;}
+  const jsonStr = text.slice(actionIdx + 7).trim();
   try {
     const parsed = JSON.parse(jsonStr);
     if (parsed && typeof parsed.name === "string" && typeof parsed.arguments === "object") {
@@ -598,7 +598,7 @@ export function buildGoogleGenerativeAiParams(
     ? sanitizeTransportPayloadText(stripSystemPromptCacheBoundary(context.systemPrompt))
     : "";
 
-  const isCli = model.api === ("google-gemini-cli" as any) || model.provider === "google-gemini-cli";
+  const isCli = model.api === ("google-gemini-cli" as unknown) || model.provider === "google-gemini-cli";
 
   if (isCli && context.tools?.length) {
     sysText += formatReactToolsPrompt(context.tools);
@@ -1054,7 +1054,7 @@ function pushTextBlockEnd(
     return;
   }
 
-  if (block.type === "text" && (output.api === ("google-gemini-cli" as any) || output.provider === "google-gemini-cli")) {
+  if (block.type === "text" && (output.api === ("google-gemini-cli" as unknown) || output.provider === "google-gemini-cli")) {
     const toolCall = parseReactToolCall(block.text);
     if (toolCall) {
       const toolCallId = `${toolCall.name}_${Date.now()}_${++toolCallCounter}`;
